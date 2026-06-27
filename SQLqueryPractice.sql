@@ -1,12 +1,60 @@
 use [PracticeDB]
 go
 
--- Dormant Users
-select u.user_id,u.full_name,t.txn_id,t.amount from banking_users as u  
-left join transactions as t on u.user_id=t.user_id
-union
-select u.user_id,u.full_name,t.txn_id,t.amount from banking_users as u
-right join transactions as t on u.user_id=t.user_id
+WITH UserSpend AS (
+    SELECT user_id, SUM(amount) AS total_spent
+    FROM transactions
+    GROUP BY user_id
+),
+ProductRevenue AS (
+    SELECT product_id, SUM(amount) AS total_revenue
+    FROM transactions
+    GROUP BY product_id
+)
+SELECT 
+    COALESCE(u.user_id, us.user_id) AS User_ID,
+    u.full_name,
+    ISNULL(us.total_spent, 0) AS Total_Amount_Spent,
+    COALESCE(p.product_id, pr.product_id) AS Product_ID,
+    p.product_name,
+    ISNULL(pr.total_revenue, 0) AS Total_Product_Revenue
+FROM banking_users u
+FULL OUTER JOIN UserSpend us ON u.user_id = us.user_id
+FULL OUTER JOIN ProductRevenue pr ON u.user_id = pr.product_id 
+FULL OUTER JOIN financial_products p ON pr.product_id = p.product_id;
+
+--select 
+-- u.user_id AS Inactive_User_ID,
+-- u.full_name AS Inactive_User_Name,
+-- p.product_id AS Unsold_Product_ID,
+-- p.product_name AS Unsold_Product_Name
+--FROM banking_users as u
+--full outer join transactions as t on u.user_id=t.user_id
+--full outer join financial_products as p on p.product_id=t.product_id
+--where ISNULL(u.user_id,0)=0
+
+
+--select
+--coalesce(u.user_id,t.user_id)AS Logged_User_ID,
+--ISNULL(u.full_name,'no account profile') AS username,
+--coalesce(p.product_id,t.product_id) AS Logged_Product_ID,
+--ISNULL(p.product_name,'no product catalog record') AS Product_Name,
+--t.txn_id,
+--t.amount
+--from transactions as t
+--full outer join banking_users as u on t.user_id =u.user_id
+--full outer join financial_products as p on t.product_id=p.product_id
+
+
+
+
+
+---- Dormant Users
+--select u.user_id,u.full_name,t.txn_id,t.amount from banking_users as u  
+--left join transactions as t on u.user_id=t.user_id
+--union
+--select u.user_id,u.full_name,t.txn_id,t.amount from banking_users as u
+--right join transactions as t on u.user_id=t.user_id
 
 
 --select * from transactions
